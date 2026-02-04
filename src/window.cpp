@@ -8,14 +8,33 @@
 #include <string.h>
 #include <cstdlib>
 #include <string>
+#include <filesystem>
 #include <GL/gl.h>
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
 #include <fcntl.h>
+#else
+#include <unistd.h>
 #endif
 
-using namespace std;
+using namespace std; // not clean. but it works anyways!
+
+#ifdef _WIN32
+std::string getExecutableDir() {
+    char path[MAX_PATH];
+    GetModuleFileNameA(NULL, path, MAX_PATH);
+    return std::filesystem::path(path).parent_path().string();
+}
+#else
+std::string getExecutableDir() {
+    char path[1024];
+    ssize_t count = readlink("/proc/self/exe", path, sizeof(path) - 1);
+    if (count == -1) return ""; 
+    path[count] = '\0';  // Null-terminate the string
+    return std::filesystem::path(std::string(path)).parent_path().string();
+}
+#endif
 
 extern "C" int run_gui(int argc, char **argv)
 {
@@ -62,8 +81,9 @@ extern "C" int run_gui(int argc, char **argv)
     char (*output_texts)[4096] = new char[format_map_count][4096];
     
     ImGuiIO& io = ImGui::GetIO();
-    ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguisym.ttf", 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-
+    std::string execDir = getExecutableDir();
+    std::string fontPath = execDir + "/assets/dejavu.ttf";
+    ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
     // Initialize all buffers to empty strings
     for (size_t i = 0; i < format_map_count; ++i) {
         input_texts[i][0] = '\0';
