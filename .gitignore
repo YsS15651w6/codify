@@ -6,3 +6,5 @@ codify
 *.obj
 imgui.ini
 CMakeFiles/
+cmake_install.cmake
+Makefile
