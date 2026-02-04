@@ -83,9 +83,9 @@ extern "C" int run_gui(int argc, char **argv)
     ImGuiIO& io = ImGui::GetIO();
     std::string execDir = getExecutableDir();
     #ifdef _WIN32 // Compatibility pt. 1000
-    std::string fontPath = execDir + "\\src\\assets\\dejavu.ttf";
+    std::string fontPath = execDir + "\\src\\assets\\segoeuisym.ttf";
     #else
-    std::string fontPath = execDir + "/src/assets/dejavu.ttf";
+    std::string fontPath = execDir + "/src/assets/segoeuisym.ttf";
     #endif
     ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f, NULL, io.Fonts->GetGlyphRangesDefault());
     // Initialize all buffers to empty strings
