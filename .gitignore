@@ -5,3 +5,4 @@ codify.exe
 codify
 *.obj
 imgui.ini
+CMakeFiles/

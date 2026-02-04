@@ -9,3 +9,7 @@ New-Item -ItemType Directory -Path ".\build"
 Set-Location ".\build"
 cmake -G "MinGW Makefiles" ..
 cmake --build . --config Release
+Move-Item ".\codify.exe" "..\codify.exe" -Force
+if (Test-Path ".\codify") {
+    Move-Item ".\codify" "..\codify" -Force
+}

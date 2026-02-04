@@ -10,3 +10,7 @@ mkdir build
 cd build
 cmake ..
 make
+mv codify ..
+if [ -f codify.exe ]; then
+    mv codify.exe ./codify.exe
+fi
