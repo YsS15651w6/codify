@@ -38,6 +38,7 @@ include_directories(lib/glfw/include)
 if(WIN32)
     target_link_libraries(codify glfw opengl32 gdi32)
 else()
+    # Linux might cause some people to break their keyboards out of rage... good thing it's FOSS!
     find_package(OpenGL REQUIRED)
     target_link_libraries(codify glfw ${OPENGL_LIBRARIES} X11 Xrandr Xi Xxf86vm Xcursor pthread)
 endif()
