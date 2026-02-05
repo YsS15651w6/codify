@@ -79,6 +79,7 @@ extern "C" int run_gui(int argc, char **argv)
     // Create arrays to store input/output for each format
     char (*input_texts)[4096] = new char[format_map_count][4096];
     char (*output_texts)[4096] = new char[format_map_count][4096];
+    char (*password_texts)[256] = new char[format_map_count][256];
     
     ImGuiIO& io = ImGui::GetIO();
     std::string execDir = getExecutableDir();
@@ -92,6 +93,7 @@ extern "C" int run_gui(int argc, char **argv)
     for (size_t i = 0; i < format_map_count; ++i) {
         input_texts[i][0] = '\0';
         output_texts[i][0] = '\0';
+        password_texts[i][0] = '\0';
     }
 
     while (!glfwWindowShouldClose(window)) {
@@ -143,7 +145,7 @@ extern "C" int run_gui(int argc, char **argv)
                 for (int col = 0; col < actualColumns && index < format_map_count; ++col) {
                     ImGui::TableSetColumnIndex(col);
                     
-                    const StringMap &fmt = format_map[index];
+                    const FormatEntry &fmt = format_map[index];
                     
                     // Use persistent buffers for this specific format
                     char *input_text = input_texts[index];
@@ -157,13 +159,22 @@ extern "C" int run_gui(int argc, char **argv)
                         ImVec2(-1.0f, 100.0f), 
                         ImGuiInputTextFlags_AllowTabInput);
                     
+                        if (fmt.requires_password) {
+                            char *password_text = password_texts[index];
+                            ImGui::InputText(
+                                ("Password##" + std::to_string(index)).c_str(),
+                                password_text,
+                                256,
+                                ImGuiInputTextFlags_Password);
+                        }
+
                     // Button layout - stack vertically for better fit
                     float availableButtonWidth = ImGui::GetContentRegionAvail().x;
                     float buttonWidth = (availableButtonWidth - 10.0f) / 2.0f; // Two buttons per row
                     
                     std::string encodeLabel = "Encode to " + std::string(fmt.value);
                     if (ImGui::Button((encodeLabel + "##" + std::to_string(index)).c_str(), ImVec2(buttonWidth, 0))) {
-                        char *encoded = (char *)encode(fmt.key, input_text);
+                        char *encoded = (char *)encode(fmt.key, input_text, fmt.requires_password ? password_texts[index] : NULL);
                         if (encoded) {
                             strncpy(output_text, encoded, 4095);
                             output_text[4095] = '\0';
@@ -177,7 +188,7 @@ extern "C" int run_gui(int argc, char **argv)
                     
                     ImGui::SameLine();
                     if (ImGui::Button(("Decode##" + std::to_string(index)).c_str(), ImVec2(buttonWidth, 0))) {
-                        char *decoded = (char*)decode(fmt.key, input_text);
+                        char *decoded = (char*)decode(fmt.key, input_text, fmt.requires_password ? password_texts[index] : NULL);
                         if (decoded) {
                             strncpy(output_text, decoded, 4095);
                             output_text[4095] = '\0';
@@ -227,6 +238,7 @@ extern "C" int run_gui(int argc, char **argv)
     // Cleanup
     delete[] input_texts;
     delete[] output_texts;
+    delete[] password_texts;
     
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

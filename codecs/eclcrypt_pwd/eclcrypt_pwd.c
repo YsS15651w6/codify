@@ -1,12 +1,10 @@
-#include "eclcrypt.h"
+#include "eclcrypt_pwd.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-// bigass internal shit... more like diarrhea
+// copy of eclcrypt but with password func
 
-// bigass mapping table
-// probably not the most efficient way to store this but whatever
 static const char* map[256] = {
     ['A'] = "⅃",   
     ['B'] = "⊔",
@@ -39,7 +37,7 @@ static const char* map[256] = {
     ['2'] = "@",
     ['3'] = "#",
     ['4'] = "$",
-    ['5'] = "%", // i was wrong... VSCode can be a pure dumpster-fire sometimes.
+    ['5'] = "%", // learned my lesson
     ['6'] = "^",
     ['7'] = "&",
     ['8'] = "*",
@@ -54,11 +52,10 @@ static const char* map[256] = {
     ['&'] = "7",
     ['*'] = "8",
     ['('] = "9"     
-}; // base map... add U2060 joiner delimiter
+}; // base map... add U2060 joiner delimiter & move with seed from pwd
 
-const char *DELIM = "\xe2\x81\xa0"; // said delimiter
+const char *DELIMITER = "\xe2\x81\xa0"; // said thing
 
-// trie shit... FML
 typedef struct TrieNode {
     unsigned char letter; // original letter
     struct TrieNode *children[256];
@@ -71,10 +68,6 @@ static TrieNode* create_node() {
 }
 
 static void trie_insert(TrieNode *root, const char *encoded, unsigned char letter) { 
-    // when i wrote this, only god and i understood what it does
-    // now, only god knows
-    // it is now actually a trie
-    // amt_hrs_wasted_on_this: 2
     TrieNode *node = root;
     for (size_t i = 0; encoded[i]; i++) {
         unsigned char c = (unsigned char)encoded[i];
@@ -87,8 +80,8 @@ static void trie_insert(TrieNode *root, const char *encoded, unsigned char lette
 
 static void trie_free(TrieNode *node) {
     if (!node) return;
-    for (int i = 0; i < 256; i++) trie_free(node->children[i]); // insert hide the pain harold meme here
-    free(node); // frees it. you're welcome. (i hate myself)
+    for (int i = 0; i < 256; i++) trie_free(node->children[i]);
+    free(node); 
 }
 
 // Decode a single "word" using the trie
@@ -123,10 +116,38 @@ static void decode_word_trie(TrieNode *root, const char *w, char *out) {
     out[out_idx] = '\0';
 }
 
+static int get_seed_from_password(const char *password) {
+    int seed = 0;
+    for (size_t i = 0; password[i]; i++) {
+        seed += (unsigned char)password[i]; // more weird shit
+    }
+    return seed/strlen(password);
+}
+
+void shuffle_map(const char **shuffled_map, int seed) {
+    // copy base map first
+    for (int i = 0; i < 256; i++)
+        shuffled_map[i] = map[i];
+
+    srand(seed);
+
+    // God knows what this does... not me. Have a word with Him if you don't like it.
+    for (int i = 255; i > 0; i--) {
+        int j = rand() % (i + 1);
+        const char *tmp = shuffled_map[i];
+        shuffled_map[i] = shuffled_map[j];
+        shuffled_map[j] = tmp;
+    }
+}
+
+
 // publicly faced shit
-char *eclcrypt_encode(const char *input) {
+char *eclcrypt_pwd_encode(const char *input, const char *password) {
     if (!input) return NULL;
     size_t len = strlen(input);
+    int seed = get_seed_from_password(password);
+    const char *shuffled_map[256];
+    shuffle_map(shuffled_map, seed);
     char *result = malloc(len * 8 + 1); // make room for delimiter per letter
     if (!result) return NULL;
     result[0] = '\0';
@@ -150,15 +171,15 @@ char *eclcrypt_encode(const char *input) {
         for (size_t i = 0; word[i]; i++) {
             unsigned char c = (unsigned char)word[i];
             if (c >= 'a' && c <= 'z') c -= 32; // lowercase → uppercase
-            const char *replacement = map[c];
+            const char *replacement = shuffled_map[c];
             if (replacement) {
                 strcat(tmp, replacement);
-                strcat(tmp, DELIM); // invisible delimiter between letters
+                strcat(tmp, DELIMITER); // invisible delimiter between letters
             } else {
                 size_t len_tmp = strlen(tmp);
                 tmp[len_tmp] = word[i];
                 tmp[len_tmp+1] = '\0';
-                strcat(tmp, DELIM); // delimiter even for unknown chars
+                strcat(tmp, DELIMITER); // delimiter even for unknown chars
             }
         }
 
@@ -175,22 +196,25 @@ char *eclcrypt_encode(const char *input) {
     return result;
 }
 
-char *eclcrypt_decode(const char *input) {
+char *eclcrypt_pwd_decode(const char *input, const char *password) {
     if (!input) return NULL;
     size_t len = strlen(input);
     char *result = malloc(len + 1);
+    int seed = get_seed_from_password(password);
+    const char *shuffled_map[256];
+    shuffle_map(shuffled_map, seed);
     if (!result) return NULL;
     result[0] = '\0';
 
     // Build the trie
     TrieNode *root = create_node();
     for (int i = 0; i < 256; i++) {
-        if (map[i]) trie_insert(root, map[i], (unsigned char)i);
+        if (shuffled_map[i]) trie_insert(root, shuffled_map[i], (unsigned char)i);
     }
 
     const char *p = input;
     char tmp[256];
-    size_t delim_len = strlen(DELIM);
+    size_t delim_len = strlen(DELIMITER);
 
     while (*p) {
         // skip spaces between words
@@ -201,7 +225,7 @@ char *eclcrypt_decode(const char *input) {
         }
 
         // grab next letter token
-        const char *next = strstr(p, DELIM);
+        const char *next = strstr(p, DELIMITER);
         if (!next) break; // end of string
         size_t tok_len = next - p;
         if (tok_len >= sizeof(tmp)) tok_len = sizeof(tmp)-1;
@@ -219,11 +243,10 @@ char *eclcrypt_decode(const char *input) {
     trie_free(root);
     return result;
 }
-char *eclcrypt_encode_wrap(const char *input, const char *password) {
-    (void) password;
-    return eclcrypt_encode(input);
+
+char *eclcrypt_pwd_encode_wrap(const char *input, const char *password) {
+    return eclcrypt_pwd_encode(input, password);
 }
-char *eclcrypt_decode_wrap(const char *input, const char *password) {
-    (void) password;
-    return eclcrypt_decode(input);
+char *eclcrypt_pwd_decode_wrap(const char *input, const char *password) {
+    return eclcrypt_pwd_decode(input, password);
 }

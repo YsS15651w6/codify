@@ -4,44 +4,57 @@
 #include "../codecs/pigl/pigl.h"
 #include "../codecs/ubdb/ubdb.h"
 #include "../codecs/eclcrypt/eclcrypt.h"
+#include "../codecs/eclcrypt_pwd/eclcrypt_pwd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-const char *version = "1.1.0";
+const char *version = "1.2.0";
 
-StringMap format_map[] = {
-    { "pigl", "Pig Latin", pigl_encode, pigl_decode },
-    { "ubdb", "Ubbi Dubbi", ubdb_encode, ubdb_decode },
-    {"eclcrypt", "ECLCrypt", eclcrypt_encode, eclcrypt_decode}
+FormatEntry format_map[] = {
+    {"pigl", "PIGL Encoding", pigl_encode_wrap, pigl_decode_wrap, false},
+    {"ubdb", "UBDB Encoding", ubdb_encode_wrap, ubdb_decode_wrap, false},
+    {"eclcrypt", "ECL Crypt Encoding", eclcrypt_encode_wrap, eclcrypt_decode_wrap, false},
+    {"eclcrypt_pwd", "ECL Crypt with Password Encoding", eclcrypt_pwd_encode_wrap, eclcrypt_pwd_decode_wrap, true}
 };
+
 const size_t format_map_count = sizeof(format_map) / sizeof(format_map[0]);
 
-const char *lookup(const char *key, StringMap *map, size_t map_len) {
+const char *lookup(const char *key, FormatEntry *map, size_t map_len) {
     for (size_t i = 0; i < map_len; i++)
         if (strcmp(key, map[i].key) == 0)
             return map[i].value;
     return NULL;
 }
 
-int get_index(const char *key, StringMap *map, size_t map_len) {
+int get_index(const char *key, FormatEntry *map, size_t map_len) {
     for (size_t i = 0; i < map_len; i++)
         if (strcmp(key, map[i].key) == 0)
             return (int)i;
     return -1;
 }
 
-const char *encode(const char *format, const char *input) {
-    int idx = get_index(format, (StringMap *)format_map,
-                        sizeof(format_map)/sizeof(format_map[0]));
-    return idx >= 0 ? format_map[idx].func_encode(input) : NULL;
+const char *encode(const char *format, const char *input, const char *password) {
+    for (size_t i = 0; i < format_map_count; i++) {
+        if (strcmp(format, format_map[i].key) == 0) {
+            if (format_map[i].requires_password && !password)
+                return NULL; // fail if password required but missing
+            return format_map[i].func_encode(input, password);
+        }
+    }
+    return NULL; // not found
 }
 
-const char *decode(const char *format, const char *input) {
-    int idx = get_index(format, (StringMap *)format_map,
-                        sizeof(format_map)/sizeof(format_map[0]));
-    return idx >= 0 ? format_map[idx].func_decode(input) : NULL;
+const char *decode(const char *format, const char *input, const char *password) {
+    for (size_t i = 0; i < format_map_count; i++) {
+        if (strcmp(format, format_map[i].key) == 0) {
+            if (format_map[i].requires_password && !password)
+                return NULL; // fail if password required but missing
+            return format_map[i].func_decode(input, password);
+        }
+    }
+    return NULL; // not found
 }
 
 void handle_args(int argc, char **argv) {
@@ -62,8 +75,8 @@ void handle_args(int argc, char **argv) {
         for (size_t i = 0; i < sizeof(format_map)/sizeof(format_map[0]); i++) 
             fprintf(stdout, " %s: %s\n", format_map[i].value, format_map[i].key);
         fprintf(stdout, "Commands:\n");
-        fprintf(stdout, " encode <format> [text]                     Encode text (or stdin if no text)\n");
-        fprintf(stdout, " decode <format> [text]                     Decode text (or stdin if no text)\n");
+        fprintf(stdout, " encode <format> [text] [password i.a]      Encode text (or stdin if no text)\n");
+        fprintf(stdout, " decode <format> [text] [password i.a]      Decode text (or stdin if no text)\n");
         fprintf(stdout, " help                                       Show this help message\n");
         fprintf(stdout, "Flags:\n");
         fprintf(stdout, " --help, -h                                 Show this help message\n");
@@ -101,7 +114,8 @@ void handle_args(int argc, char **argv) {
     const char *input_path  = NULL;
     const char *output_path = NULL;
     const char *input_text = NULL;
-    
+    const char *password = NULL;
+
     // Parse arguments - look for text argument and flags
     int i = 3;
     if (i < argc && argv[i][0] != '-') {
@@ -110,6 +124,11 @@ void handle_args(int argc, char **argv) {
         i++;
     }
     
+    if (i < argc && argv[i][0] != '-' && format_map[get_index(format_key, format_map, format_map_count)].requires_password) {
+        password = argv[i];
+        i++;
+    }
+
     // Parse remaining flags
     for (; i < argc; i++) {
         if ((strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--input") == 0) &&
@@ -170,7 +189,7 @@ void handle_args(int argc, char **argv) {
     }
 
     const char *result = do_encode ?
-        encode(format_key, buf) : decode(format_key, buf);
+        encode(format_key, buf, password) : decode(format_key, buf, password);
 
     free(buf);
     if (!result) {

@@ -20,6 +20,7 @@ set(SOURCES
     codecs/pigl/pigl.c
     codecs/ubdb/ubdb.c
     codecs/eclcrypt/eclcrypt.c
+    codecs/eclcrypt_pwd/eclcrypt_pwd.c
     lib/imgui/imgui.cpp
     lib/imgui/imgui_draw.cpp
     lib/imgui/imgui_tables.cpp

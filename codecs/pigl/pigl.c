@@ -92,3 +92,13 @@ char *pigl_decode(const char *input) {
     }
     return result;
 }
+
+char *pigl_encode_wrap(const char *input, const char *password) {
+    (void)password;
+    return pigl_encode(input);
+}
+
+char *pigl_decode_wrap(const char *input, const char *password) {
+    (void)password;
+    return pigl_decode(input);
+}

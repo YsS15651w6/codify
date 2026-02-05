@@ -93,3 +93,11 @@ char *ubdb_decode(const char *input) {
 
     return result;
 }
+char *ubdb_encode_wrap(const char *input, const char *password) {
+    (void)password;
+    return ubdb_encode(input);
+}
+char *ubdb_decode_wrap(const char *input, const char *password) {
+    (void)password;
+    return ubdb_decode(input);
+}
