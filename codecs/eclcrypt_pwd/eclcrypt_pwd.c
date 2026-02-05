@@ -118,7 +118,7 @@ void shuffle_map(const char **shuffled_map, int seed) {
 
   srand(seed);
 
-  // Fisher-Yates shuffle on the valid values
+  // Fisher-Yates shuffle on the valid values (apparently)
   for (int i = count - 1; i > 0; i--) {
     int j = rand() % (i + 1);
     const char *tmp = valid_values[i];
