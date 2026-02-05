@@ -1,4 +1,3 @@
-lib/
 build/
 .vscode/
 codify.exe
@@ -9,3 +8,7 @@ CMakeFiles/
 Makefile
 *.cmake
 .cache/
+get_nsis.ps1
+codify.nsi
+lib/
+get_deb.sh

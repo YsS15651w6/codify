@@ -31,6 +31,13 @@ set(SOURCES
 )
 
 add_executable(codify ${SOURCES})
+install(TARGETS codify
+    RUNTIME DESTINATION bin
+)
+install(DIRECTORY src/assets/
+    DESTINATION bin/assets
+)
+
 
 add_subdirectory(lib/glfw)
 include_directories(lib/glfw/include)
@@ -42,3 +49,19 @@ else()
     find_package(OpenGL REQUIRED)
     target_link_libraries(codify glfw ${OPENGL_LIBRARIES} X11 Xrandr Xi Xxf86vm Xcursor pthread)
 endif()
+
+include(InstallRequiredSystemLibraries)
+
+set(CPACK_PACKAGE_NAME "Codify")
+set(CPACK_PACKAGE_VENDOR "RainDrippy")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Codify - CLI + GUI tool")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_CONTACT "raindrippy.contact@protonmail.com")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS;ZIP")
+else()
+    set(CPACK_GENERATOR "TGZ;DEB")
+endif()
+
+include(CPack)
