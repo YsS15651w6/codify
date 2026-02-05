@@ -1,6 +1,6 @@
 # Codify
 
-**Codify** is a versatile and powerful text encoding and decoding tool equipped with both a Command Line Interface (CLI) and a Graphical User Interface (GUI). It provides support for multiple custom encoding formats, with optional password protection for enhanced security.
+**Codify** (v1.2) is a versatile and powerful text encoding and decoding tool equipped with both a Command Line Interface (CLI) and a Graphical User Interface (GUI). It provides support for multiple custom encoding formats, with optional password protection for enhanced security.
 
 ---
 
@@ -56,6 +56,17 @@
     ```bash
     cmake --build . --config Release
     ```
+
+### Packaging
+
+To generate a standalone installer or package:
+
+```bash
+cpack -C Release
+```
+
+-   **Windows**: Generates an NSIS installer and a ZIP archive.
+-   **Linux**: Generates a `.deb` package and a `.tar.gz` archive.
 
 ---
 
