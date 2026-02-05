@@ -68,6 +68,10 @@ cpack -C Release
 -   **Windows**: Generates an NSIS installer and a ZIP archive.
 -   **Linux**: Generates a `.deb` package and a `.tar.gz` archive.
 
+### Quick Install
+
+You can get a pre-built installer for your OS from the [Releases](https://github.com/YsS15651w6/codify/releases) page.
+
 ---
 
 ## Usage
