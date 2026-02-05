@@ -10,8 +10,10 @@ Set-Location ".\build"
 cmake -G "MinGW Makefiles" ..
 cmake --build . --config Release
 if (Test-Path ".\codify.exe") {
-    Move-Item ".\codify.exe" "..\codify.exe" -Force
+    if (Test-Path "..\codify.exe") { Remove-Item "..\codify.exe" -Force }
+    Move-Item ".\codify.exe" "..\codify.exe"
 }
 if (Test-Path ".\codify") {
-    Move-Item ".\codify" "..\codify" -Force
+    if (Test-Path "..\codify") { Remove-Item "..\codify" -Force }
+    Move-Item ".\codify" "..\codify"
 }
